@@ -1,0 +1,194 @@
+<?php
+function listar()
+{
+    $caminho_banco = realpath('db.sqlite');
+
+    $pdo = new PDO("sqlite:$caminho_banco");
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $sql = "SELECT * FROM vendas";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+$lista = listar();
+?>
+
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Dashboard</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            text-align: left;
+        }
+
+        .chart-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+
+        .chart-container canvas {
+            width: 800px;
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+
+<body class="overflow-hidden">
+    <header class="m-1">
+        <div class="navbar bg-base-100 rounded-box" data-theme="dracula">
+            <div class="flex-none">
+                <button class="btn btn-square btn-ghost">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block h-5 w-5 stroke-current">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="flex-1 justify-center">
+                <a class="btn btn-ghost text-xl">Dashboard NOC Incidentes</a>
+            </div>
+            <div class="flex-none">
+                <button class="btn btn-square btn-ghost">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block h-5 w-5 stroke-current">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+    <div class="flex">
+        <div class="flex mb-1">
+            <nav class="justify-start ml-1">
+                <ul class="menu menu-sm bg-base-200 rounded-box w-56 h-screen" data-theme="dracula">
+                    <li><a></a></li>
+                </ul>
+            </nav>
+        </div>
+
+        <div class="flex justify-between w-full mx-1">
+            <div class="rounded-box h-96 w-full" data-theme="dracula">
+                <canvas id="myChart"></canvas>
+            </div>
+
+            <div class="rounded-box h-96 w-full ml-1" data-theme="dracula">
+                <canvas id="myChart2"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- <div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Código Venda</th>
+                    <th>Data</th>
+                    <th>Loja</th>
+                    <th>Produto</th>
+                    <th>Quantidade</th>
+                    <th>Valor Unitário</th>
+                    <th>Valor Final</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($lista as $linha) : ?>
+                    <tr>
+                        <td><?= htmlspecialchars($linha['id']) ?></td>
+                        <td><?= htmlspecialchars($linha['codigo_venda']) ?></td>
+                        <td><?= htmlspecialchars($linha['data']) ?></td>
+                        <td><?= htmlspecialchars($linha['id_loja']) ?></td>
+                        <td><?= htmlspecialchars($linha['produto']) ?></td>
+                        <td><?= htmlspecialchars($linha['quantidade']) ?></td>
+                        <td><?= htmlspecialchars($linha['valor_unitario']) ?></td>
+                        <td><?= htmlspecialchars($linha['valor_final']) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div> -->
+
+    <script>
+        // Passando os dados do PHP para o JavaScript
+        const dadosPHP = <?php echo json_encode($lista); ?>;
+
+        // Supondo que a tabela "vendas" tenha colunas "produto" e "quantidade"
+        const labels = dadosPHP.map(item => item.produto);
+        const data = dadosPHP.map(item => item.quantidade);
+
+        const ctx = document.getElementById('myChart').getContext('2d');
+        const ctx2 = document.getElementById('myChart2').getContext('2d');
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '# de Vendas',
+                    data: data,
+                    borderWidth: 1,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Vendas por produto',
+                    data: data,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
